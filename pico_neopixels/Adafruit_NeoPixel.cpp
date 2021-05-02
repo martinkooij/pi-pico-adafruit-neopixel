@@ -80,7 +80,7 @@
   @return  Adafruit_NeoPixel object. Call the begin() function before use.
 */
 Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint16_t p, neoPixelType t) :
-  begun(false), brightness(0), pixels(NULL) {
+  begun(false), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightb(NULL), brightw(NULL)  {
   PRINTF1("In constructor 1\n");
   endTime = get_absolute_time() ;
   PRINTF1("In constructor 2\n");
@@ -106,8 +106,7 @@ Adafruit_NeoPixel::Adafruit_NeoPixel() :
 #if defined(NEO_KHZ400)
   is800KHz(true),
 #endif
-  begun(false), numLEDs(0), numBytes(0), pin(-1), brightness(0), pixels(NULL),
-  rOffset(1), gOffset(0), bOffset(2), wOffset(1){
+  begun(false), numLEDs(0), numBytes(0), pin(-1), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightb(NULL), brightw(NULL), rOffset(1), gOffset(0), bOffset(2), wOffset(1){
   endTime = get_absolute_time();
 }
 
@@ -122,6 +121,7 @@ Adafruit_NeoPixel::~Adafruit_NeoPixel() {
   PRINTF1("End init = %d, pin = %d, 800kHz = %d, length = %d, pio= %d, sm = %d, offset = %d, no_sm = [%d, %d]\n ", begun, pin, is800KHz, numLEDs, pio_get_index(pio), sm, (pio_get_index(pio) == 0) ? pio0_offset : pio1_offset,pio_no_sm[0], pio_no_sm[1] );
   PRINTF1("going to free\n");
   free(pixels);  // unclaim the memory for the pixels
+  free(opixels); // unclaim the memory for the pixels
   PRINTF1("freed pixels\n");
   pio_sm_unclaim(pio,sm); // unclaim the state machine
   pio_no_sm[pio_get_index(pio)]-- ;
@@ -162,6 +162,17 @@ void Adafruit_NeoPixel::updateLength(uint16_t n) {
   } else {
     numLEDs = numBytes = 0;
   }
+  
+  if (brightfr != NULL) {
+	  free(opixels) ;
+	  if((opixels = (uint8_t *)malloc(numBytes))) {
+			memset(opixels, 0, numBytes);
+			numLEDs = n;
+	  } else {
+			numLEDs = numBytes = 0;
+	  };
+  };
+  
 }
 
 /*!
@@ -332,24 +343,7 @@ void Adafruit_NeoPixel::setPin(uint16_t p) {
 */
 void Adafruit_NeoPixel::setPixelColor(
  uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-
-  if(n < numLEDs) {
-    if(brightness) { // See notes in setBrightness()
-      r = (r * brightness) >> 8;
-      g = (g * brightness) >> 8;
-      b = (b * brightness) >> 8;
-    }
-    uint8_t *p;
-    if(wOffset == rOffset) { // Is an RGB-type strip
-      p = &pixels[n * 3];    // 3 bytes per pixel
-    } else {                 // Is a WRGB-type strip
-      p = &pixels[n * 4];    // 4 bytes per pixel
-      p[wOffset] = 0;        // But only R,G,B passed -- set W to 0
-    }
-    p[rOffset] = r;          // R,G,B always stored
-    p[gOffset] = g;
-    p[bOffset] = b;
-  }
+    setPixelColor(n,r,g,b,0);
 }
 
 /*!
@@ -372,16 +366,35 @@ void Adafruit_NeoPixel::setPixelColor(
       b = (b * brightness) >> 8;
       w = (w * brightness) >> 8;
     }
-    uint8_t *p;
-    if(wOffset == rOffset) { // Is an RGB-type strip
-      p = &pixels[n * 3];    // 3 bytes per pixel (ignore W)
-    } else {                 // Is a WRGB-type strip
-      p = &pixels[n * 4];    // 4 bytes per pixel
-      p[wOffset] = w;        // Store W
-    }
-    p[rOffset] = r;          // Store R,G,B
-    p[gOffset] = g;
-    p[bOffset] = b;
+    uint8_t *p, *po;
+	if (brightfr == NULL) {
+		if(wOffset == rOffset) { // Is an RGB-type strip
+			p = &pixels[n * 3];    // 3 bytes per pixel
+		} else {                 // Is a WRGB-type strip
+			p = &pixels[n * 4];    // 4 bytes per pixel
+			p[wOffset] = w;        // set W
+		}
+		p[rOffset] = r;          // R,G,B always stored
+		p[gOffset] = g;
+		p[bOffset] = b;
+	} else {
+		if(wOffset == rOffset) { // Is an RGB-type strip
+			po = &opixels[n * 3];    // 3 bytes per pixel
+			p  =  &pixels[n * 3];
+		} else {                 // Is a WRGB-type strip
+			po = &opixels[n * 4];    // 4 bytes per pixel
+			p  =  &pixels[n * 4];
+			po[wOffset] = w;        // set W
+			p[wOffset] = brightfw(w);
+		}
+		po[rOffset] = r;          // R,G,B always stored
+		po[gOffset] = g;
+		po[bOffset] = b;
+		p[rOffset] = brighfr(r);
+		p[gOffset] = brightg(g);
+		p[bOffset] = brightb(b);
+	}
+	
   }
 }
 
@@ -393,27 +406,11 @@ void Adafruit_NeoPixel::setPixelColor(
               and least significant byte is blue.
 */
 void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c) {
-  if(n < numLEDs) {
-    uint8_t *p,
-      r = (uint8_t)(c >> 16),
+      w = (uint8_t)(c >> 24);
+	  r = (uint8_t)(c >> 16),
       g = (uint8_t)(c >>  8),
       b = (uint8_t)c;
-    if(brightness) { // See notes in setBrightness()
-      r = (r * brightness) >> 8;
-      g = (g * brightness) >> 8;
-      b = (b * brightness) >> 8;
-    }
-    if(wOffset == rOffset) {
-      p = &pixels[n * 3];
-    } else {
-      p = &pixels[n * 4];
-      uint8_t w = (uint8_t)(c >> 24);
-      p[wOffset] = brightness ? ((w * brightness) >> 8) : w;
-    }
-    p[rOffset] = r;
-    p[gOffset] = g;
-    p[bOffset] = b;
-  }
+	  setPixelColor(n,r,g,b,w);
 }
 
 /*!
@@ -562,38 +559,53 @@ uint32_t Adafruit_NeoPixel::ColorHSV(uint16_t hue, uint8_t sat, uint8_t val) {
 uint32_t Adafruit_NeoPixel::getPixelColor(uint16_t n) const {
   if(n >= numLEDs) return 0; // Out of bounds, return no color.
 
-  uint8_t *p;
-
-  if(wOffset == rOffset) { // Is RGB-type device
-    p = &pixels[n * 3];
-    if(brightness) {
-      // Stored color was decimated by setBrightness(). Returned value
-      // attempts to scale back to an approximation of the original 24-bit
-      // value used when setting the pixel color, but there will always be
-      // some error -- those bits are simply gone. Issue is most
-      // pronounced at low brightness levels.
-      return (((uint32_t)(p[rOffset] << 8) / brightness) << 16) |
-             (((uint32_t)(p[gOffset] << 8) / brightness) <<  8) |
-             ( (uint32_t)(p[bOffset] << 8) / brightness       );
-    } else {
-      // No brightness adjustment has been made -- return 'raw' color
-      return ((uint32_t)p[rOffset] << 16) |
-             ((uint32_t)p[gOffset] <<  8) |
-              (uint32_t)p[bOffset];
-    }
-  } else {                 // Is RGBW-type device
-    p = &pixels[n * 4];
-    if(brightness) { // Return scaled color
-      return (((uint32_t)(p[wOffset] << 8) / brightness) << 24) |
-             (((uint32_t)(p[rOffset] << 8) / brightness) << 16) |
-             (((uint32_t)(p[gOffset] << 8) / brightness) <<  8) |
-             ( (uint32_t)(p[bOffset] << 8) / brightness       );
-    } else { // Return raw color
-      return ((uint32_t)p[wOffset] << 24) |
-             ((uint32_t)p[rOffset] << 16) |
-             ((uint32_t)p[gOffset] <<  8) |
-              (uint32_t)p[bOffset];
-    }
+  uint8_t *p, *po;
+  
+  if (brightfr == NULL) {
+	if(wOffset == rOffset) { // Is RGB-type device
+		p = &pixels[n * 3];
+		if(brightness) {
+		// Stored color was decimated by setBrightness(). Returned value
+		// attempts to scale back to an approximation of the original 24-bit
+		// value used when setting the pixel color, but there will always be
+		// some error -- those bits are simply gone. Issue is most
+		// pronounced at low brightness levels.
+		return (((uint32_t)(p[rOffset] << 8) / brightness) << 16) |
+				(((uint32_t)(p[gOffset] << 8) / brightness) <<  8) |
+				( (uint32_t)(p[bOffset] << 8) / brightness       );
+		} else {
+		// No brightness adjustment has been made -- return 'raw' color
+		return ((uint32_t)p[rOffset] << 16) |
+				((uint32_t)p[gOffset] <<  8) |
+				(uint32_t)p[bOffset];
+		}
+	} else {                 // Is RGBW-type device
+		p = &pixels[n * 4];
+		if(brightness) { // Return scaled color
+		return (((uint32_t)(p[wOffset] << 8) / brightness) << 24) |
+				(((uint32_t)(p[rOffset] << 8) / brightness) << 16) |
+				(((uint32_t)(p[gOffset] << 8) / brightness) <<  8) |
+				( (uint32_t)(p[bOffset] << 8) / brightness       );
+		} else { // Return raw color
+		return ((uint32_t)p[wOffset] << 24) |
+				((uint32_t)p[rOffset] << 16) |
+				((uint32_t)p[gOffset] <<  8) |
+				(uint32_t)p[bOffset];
+		}
+	}
+  } else { // else take the values from the original array
+  	if(wOffset == rOffset) { // Is RGB-type device
+		po = &opixels[n * 3];
+		return ((uint32_t)po[rOffset] << 16) |
+				((uint32_t)po[gOffset] <<  8) |
+				(uint32_t)po[bOffset];
+	} else {                 // Is RGBW-type device
+		po = &opixels[n * 4];
+		return ((uint32_t)po[wOffset] << 24) |
+				((uint32_t)po[rOffset] << 16) |
+				((uint32_t)po[gOffset] <<  8) |
+				(uint32_t)po[bOffset];
+	}
   }
 }
 
@@ -646,6 +658,27 @@ void Adafruit_NeoPixel::setBrightness(uint8_t b) {
     brightness = newBrightness;
   }
 }
+
+void Adafruit_NeoPixel::setBrightnessFunctions(pBrightnessFunc fr, pBrightnessFunc fg, pBrightnessFunc fb, pBrightnessFunc fw) {
+	
+	if (opixels == NULL & numLEDs != 0) {
+        opixels = (uint8_t *)malloc(numBytes);
+		memcpy(opixels,pixels,numBytes);
+	}
+	
+	brightr = fr;
+	brightg = fg;
+	brightb = fb;
+	brightw = fw;
+	
+	for (int i = 0 ; i < numLEDs ; i++) {
+		uint32_t pixel;
+		pixel = getPixelColor(i);
+		setPixelColor(i,pixel);
+	}
+};
+		
+
 
 /*!
   @brief   Retrieve the last-set brightness value for the strip.

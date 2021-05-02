@@ -119,6 +119,7 @@
 #define NEO_KHZ400 0x0100 ///< 400 KHz data transmission
 
 typedef uint16_t neoPixelType; ///< 3rd arg to Adafruit_NeoPixel constructor
+typedef uint8_t (* pBrightnessFunc)(uint8_t value) ; // pointer to a brigness conversion function
 
 // These two tables are declared outside the Adafruit_NeoPixel class
 // because some boards may require oldschool compilers that don't
@@ -338,6 +339,7 @@ class Adafruit_NeoPixel {
   int16_t           pin;        ///< Output pin number (-1 if not yet set)
   uint8_t           brightness; ///< Strip brightness 0-255 (stored as +1)
   uint8_t          *pixels;     ///< Holds LED color values (3 or 4 bytes each)
+  uint8_t		   *opixels;	///< Hold originally set LED color values ( 3 or 4 bytes each)
   uint8_t           rOffset;    ///< Red index within each 3- or 4-byte pixel
   uint8_t           gOffset;    ///< Index of green byte
   uint8_t           bOffset;    ///< Index of blue byte
@@ -345,6 +347,10 @@ class Adafruit_NeoPixel {
   absolute_time_t   endTime;    ///< Latch timing reference
   PIO				pio;		///< chosen pio for this object
   uint				sm;			///<chosen state machine for this object; -1 if not yet set or none available. 
+  pBrightnessFunc	brightfr,
+					brightfg,
+					brightfb,
+					brightfw;	/// pointer to user installed brightness function
 
 };
 
