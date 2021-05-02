@@ -7,8 +7,7 @@ void delay(uint32_t ms) {
 	sleep_ms(ms);
 };
 
-#define PIN 27
-#define ONBOARD 28
+#define ONBOARD 28 // On the cytronboard there is a 1 pixel NEOPIXEL strand on pin 28
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -19,8 +18,7 @@ void delay(uint32_t ms) {
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
 //   NEO_RGBW    Pixels are wired for RGBW bitstream (NeoPixel RGBW products)
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel onb = Adafruit_NeoPixel(1, ONBOARD, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel onboard = Adafruit_NeoPixel(1, ONBOARD, NEO_GRB + NEO_KHZ800);
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -40,23 +38,23 @@ uint32_t Wheel(uint8_t WheelPos);
 
 int main() {
 
-  strip.begin();
-  strip.setBrightness(50);
-  strip.show(); // Initialize all pixels to 'off'
+  onboard.begin();
+  onboard.setBrightness(50);
+  onboard.show(); // Initialize all pixels to 'off'
 
 
  while (1) {
 	 
   // Some example procedures showing how to display to the pixels:
  
-  colorWipe(strip.Color(255, 0, 0), 50); // Red
-  colorWipe(strip.Color(0, 255, 0), 50); // Green
-  colorWipe(strip.Color(0, 0, 255), 50); // Blue
-//colorWipe(strip.Color(0, 0, 0, 255), 50); // White RGBW
+  colorWipe(onboard.Color(255, 0, 0), 50); // Red
+  colorWipe(onboard.Color(0, 255, 0), 50); // Green
+  colorWipe(onboard.Color(0, 0, 255), 50); // Blue
+//colorWipe(onboard.Color(0, 0, 0, 255), 50); // White RGBW
   // Send a theater pixel chase in...
-  theaterChase(strip.Color(127, 127, 127), 50); // White
-  theaterChase(strip.Color(127, 0, 0), 50); // Red
-  theaterChase(strip.Color(0, 0, 127), 50); // Blue
+  theaterChase(onboard.Color(127, 127, 127), 50); // White
+  theaterChase(onboard.Color(127, 0, 0), 50); // Red
+  theaterChase(onboard.Color(0, 0, 127), 50); // Blue
 
   rainbow(20);
   rainbowCycle(20);
@@ -65,11 +63,9 @@ int main() {
 };
 
 void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
-    strip.setPixelColor(i, c);
-	onb.setPixelColor(0,c);
-    strip.show();
-	onb.show();
+  for(uint16_t i=0; i<onboard.numPixels(); i++) {
+    onboard.setPixelColor(i, c);
+    onboard.show();
     delay(wait);
   }
 }
@@ -78,12 +74,10 @@ void rainbow(uint8_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256; j++) {
-    for(i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel((i+j) & 255));
+    for(i=0; i<onboard.numPixels(); i++) {
+      onboard.setPixelColor(i, Wheel((i+j) & 255));
     }
-	onb.setPixelColor(0, Wheel((j) & 255));
-    strip.show();
-	onb.show();
+    onboard.show();
     delay(wait);
   }
 }
@@ -93,12 +87,10 @@ void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
-    for(i=0; i< strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
+    for(i=0; i< onboard.numPixels(); i++) {
+      onboard.setPixelColor(i, Wheel(((i * 256 / onboard.numPixels()) + j) & 255));
     }
-	onb.setPixelColor(0, Wheel((j) & 255));
-    strip.show();
-	onb.show();
+    onboard.show();
     delay(wait);
   }
 }
@@ -107,19 +99,16 @@ void rainbowCycle(uint8_t wait) {
 void theaterChase(uint32_t c, uint8_t wait) {
   for (int j=0; j<10; j++) {  //do 10 cycles of chasing
     for (int q=0; q < 3; q++) {
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, c);    //turn every third pixel on
+      for (uint16_t i=0; i < onboard.numPixels(); i=i+3) {
+        onboard.setPixelColor(i+q, c);    //turn every third pixel on
       }
-	  onb.setPixelColor(0,c);
-      strip.show();
-      onb.show() ;
+      onboard.show();
 	  
       delay(wait);
 
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
+      for (uint16_t i=0; i < onboard.numPixels(); i=i+3) {
+        onboard.setPixelColor(i+q, 0);        //turn every third pixel off
       }
-	  onb.setPixelColor(0,0);
     }
   }
 }
@@ -128,17 +117,15 @@ void theaterChase(uint32_t c, uint8_t wait) {
 void theaterChaseRainbow(uint8_t wait) {
   for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
     for (int q=0; q < 3; q++) {
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
+      for (uint16_t i=0; i < onboard.numPixels(); i=i+3) {
+        onboard.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
       }
-	  onb.setPixelColor(0, Wheel((j) & 255));
-      strip.show();
-	  onb.show();
+      onboard.show();
 	  
       delay(wait);
 
-      for (uint16_t i=0; i < strip.numPixels(); i=i+3) {
-        strip.setPixelColor(i+q, 0);        //turn every third pixel off
+      for (uint16_t i=0; i < onboard.numPixels(); i=i+3) {
+        onboard.setPixelColor(i+q, 0);        //turn every third pixel off
       }
     }
   }
@@ -149,14 +136,14 @@ void theaterChaseRainbow(uint8_t wait) {
 uint32_t Wheel(uint8_t WheelPos) {
   WheelPos = 255 - WheelPos;
   if(WheelPos < 85) {
-    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+    return onboard.Color(255 - WheelPos * 3, 0, WheelPos * 3);
   }
   if(WheelPos < 170) {
     WheelPos -= 85;
-    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+    return onboard.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
   WheelPos -= 170;
-  return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  return onboard.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
 
 // Fill the dots one after the other with a color

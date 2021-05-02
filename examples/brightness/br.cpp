@@ -19,33 +19,43 @@
 // strandtest example for more information on possible values.
 
 
-#define DELAYVAL 200 // Time (in milliseconds) to pause between pixels
+#define DELAYVAL 50 // Time (in milliseconds) to pause between pixels
+#define CYCLEDELAY 12 // Time to wait after a cycle
+static uint8_t level = 0 ;
+
+uint8_t adjust (uint8_t value) {
+	if (level == 0) return value ;
+	return ((value * neopixels_gamma8(level)) >> 8) ;
+};
+	
 
 void example() {
   Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-//  Adafruit_NeoPixel pixels2(NUMPIXELS + 5, 16, NEO_GRB + NEO_KHZ800);
+
   
   pixels.begin(); // INITIALIZE NeoPixel strip object (REQUIRED)
-//  pixels2.begin() ;
-  
-  for (int l ; l <4 ; l++) {
-  pixels.clear(); // Set all pixel colors to 'off'
-   printf("cleared pixels 1\n"); 
-//  pixels2.clear() ;
-//  printf("cleared pixels 2\n"); 
-  // The first NeoPixel in a strand is #0, second is 1, all the way up
-  // to the count of pixels minus one.
-  for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
+  pixels.setBrightnessFunctions(adjust,adjust,adjust,adjust);
+ 
 
-    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    // Here we're using a moderately bright green color:
-    pixels.setPixelColor(i, pixels.Color((i%3)*150,((i+1)%3)*150 ,((i+2)%3)*150));
+  
+  for (int l=0 ; l <4 ; l++) {
+  pixels.clear(); // Set all pixel colors to 'off'
+   printf("cleared pixels 1, level = %d\n",level); 
+
+  for(int i=0; i<NUMPIXELS; i++) { // For each pixel...
+    pixels.setPixelColor(i,pixels.Color(222, 49, 99));
 //	pixels2.setPixelColor(NUMPIXELS - (i +1),pixels2.Color((i%3)*150,((i+1)%3)*150 ,((i+2)%3)*150));
     pixels.show();   // Send the updated pixel colors to the hardware.
 //	pixels2.show() ;
-
     sleep_ms(DELAYVAL); // Pause before next pass through loop
   }
+  for (int i=0; i <255 ; i++) {
+  level = (255-i) ;
+  pixels.setBrightnessFunctions(adjust,adjust,adjust,adjust);
+  pixels.show() ;
+  sleep_ms(CYCLEDELAY);
+  }
+  level = 0 ;
   }
 };
   

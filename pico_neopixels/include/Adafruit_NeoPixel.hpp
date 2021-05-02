@@ -181,6 +181,9 @@ static int pio0_offset = -1;   		// offset of loaded pio neopixel program on pio
 static int pio1_offset = -1;		// offset of loaded pio neopixel program on pio1; -1 if no program loaded
 static int pio_no_sm[2] = {0,0} ;	// number of state machines in use for Neopixel  
 
+static uint8_t  neopixels_gamma8(uint8_t x) {
+    return _NeoPixelGammaTable[x]; // 0-255 in, 0-255 out
+  }
 
 /*! 
     @brief  Class that stores state and functions for interacting with
@@ -198,6 +201,7 @@ class Adafruit_NeoPixel {
 
   void              begin(void);
   void              show(void);
+  void 				setBrightnessFunctions(pBrightnessFunc fr, pBrightnessFunc fg, pBrightnessFunc fb, pBrightnessFunc fw);
   void              setPin(uint16_t p);
   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b);
   void              setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b,

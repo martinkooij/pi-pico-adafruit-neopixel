@@ -42,5 +42,37 @@ The destructor is called if called explicitlky when the object was constructed w
 
 There is a maximum of 8 neopixel strands, if pio and sm's are not used for any other purposes in your project. Strands can be assigned to any GPIO pin of the pico. 
 
+## Advance Brightness Control (specific to the pico port)
+A method <code>myPixels.setBrightnessFunctions(fp_r, fp_g, fp_b, fp_w)</code> has been added that can be called at all times. The method takes 4 pointers functions that translate 8-bit pixel values to dimmed 8-bit pixel values. From that moment on extra memory is allocated to remember the (exact) original color set values of the pixels, and the dimmed values are stored in the memory that is used for display. A myPixels.show() will push the values out to the physical string. All actions are now done relative to the brightnessfunctions installed. 
+
+To make things easier a function <code>neopixels_gamma8(uint8_t val)</code> has been added outside the object header that can be used before a Neo_Pixel object is not in scope. 
+ 
+A typical usage would be:
+````
+uint8_t halfdimmed(uint8_t val) {
+  return ((val * neopixels_gamma8(126))>>8) ;
+}
+
+uint8_t notdimmed(uint8_t val) {
+  return val;
+}
+
+Adafruit_NeoPixel myPixels(60, 7, NEO_GRB + NEO_KHZ800);
+
+int main() {
+  int original_value ;
+  for (int i = 0 ; i < 60 , i++) myPixels.setPixelColor(i,266,49,99) ; //set nice colors
+  while (1) {
+    myPixels.setBrightnessFunctions(notdimmed,notdimmed,notdimmed,notdimmed) // do not dim any colors
+	myPixels.show() ;
+	sleep_ms(5000) ;
+    myPixels.setBrightnessFunctions(halfdimmed,halfdimmed,halfdimmed,halfdimmed) // dim all colors on the string to half brightness
+	myPixels.show() ;
+    original_value = myPixels.getColor(0)	; // this would give the value corresponding with 266,49,99 even though the string is dimmed
+	sleep_ms(5000) ;
+	}
+}
+````
+
 ## Releases
 V0.9.0 Pre-release. Examples simple & strandtest_wheels are compiling and confirmed working. Some documentation work needed to promote to a proper release. 

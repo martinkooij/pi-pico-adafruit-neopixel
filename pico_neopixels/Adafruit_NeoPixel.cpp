@@ -80,7 +80,7 @@
   @return  Adafruit_NeoPixel object. Call the begin() function before use.
 */
 Adafruit_NeoPixel::Adafruit_NeoPixel(uint16_t n, uint16_t p, neoPixelType t) :
-  begun(false), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightb(NULL), brightw(NULL)  {
+  begun(false), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightfb(NULL), brightfw(NULL)  {
   PRINTF1("In constructor 1\n");
   endTime = get_absolute_time() ;
   PRINTF1("In constructor 2\n");
@@ -106,7 +106,7 @@ Adafruit_NeoPixel::Adafruit_NeoPixel() :
 #if defined(NEO_KHZ400)
   is800KHz(true),
 #endif
-  begun(false), numLEDs(0), numBytes(0), pin(-1), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightb(NULL), brightw(NULL), rOffset(1), gOffset(0), bOffset(2), wOffset(1){
+  begun(false), numLEDs(0), numBytes(0), pin(-1), brightness(0), pixels(NULL), opixels(NULL), brightfr(NULL), brightfg(NULL), brightfb(NULL), brightfw(NULL), rOffset(1), gOffset(0), bOffset(2), wOffset(1){
   endTime = get_absolute_time();
 }
 
@@ -390,9 +390,9 @@ void Adafruit_NeoPixel::setPixelColor(
 		po[rOffset] = r;          // R,G,B always stored
 		po[gOffset] = g;
 		po[bOffset] = b;
-		p[rOffset] = brighfr(r);
-		p[gOffset] = brightg(g);
-		p[bOffset] = brightb(b);
+		p[rOffset] = brightfr(r);
+		p[gOffset] = brightfg(g);
+		p[bOffset] = brightfb(b);
 	}
 	
   }
@@ -406,10 +406,10 @@ void Adafruit_NeoPixel::setPixelColor(
               and least significant byte is blue.
 */
 void Adafruit_NeoPixel::setPixelColor(uint16_t n, uint32_t c) {
-      w = (uint8_t)(c >> 24);
-	  r = (uint8_t)(c >> 16),
-      g = (uint8_t)(c >>  8),
-      b = (uint8_t)c;
+      uint8_t w = (uint8_t)(c >> 24);
+	  uint8_t r = (uint8_t)(c >> 16);
+      uint8_t g = (uint8_t)(c >>  8);
+      uint8_t b = (uint8_t)c;
 	  setPixelColor(n,r,g,b,w);
 }
 
@@ -666,10 +666,10 @@ void Adafruit_NeoPixel::setBrightnessFunctions(pBrightnessFunc fr, pBrightnessFu
 		memcpy(opixels,pixels,numBytes);
 	}
 	
-	brightr = fr;
-	brightg = fg;
-	brightb = fb;
-	brightw = fw;
+	brightfr = fr;
+	brightfg = fg;
+	brightfb = fb;
+	brightfw = fw;
 	
 	for (int i = 0 ; i < numLEDs ; i++) {
 		uint32_t pixel;

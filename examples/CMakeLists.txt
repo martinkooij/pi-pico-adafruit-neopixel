@@ -9,6 +9,7 @@ project(ws2812examples C CXX ASM)
 pico_sdk_init()
 
 # Add executable. Default name is the project name, 
+add_subdirectory(brightness)
 add_subdirectory(simple)
 add_subdirectory(strandtest_wheel)
 add_subdirectory(onboard_cytron)
