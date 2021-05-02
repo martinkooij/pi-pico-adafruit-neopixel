@@ -47,6 +47,8 @@ A method <code>myPixels.setBrightnessFunctions(fp_r, fp_g, fp_b, fp_w)</code> ha
 
 To make things easier a function <code>neopixels_gamma8(uint8_t val)</code> has been added outside the object header that can be used before a Neo_Pixel object is not in scope. 
  
+Extra memory is *only* created if a call to setBrightnessFunctions is made. Otherwise *no* extra memory is allocated to keep the original values. For compatibility purposes the original setBrightness with the original somewhat broken behavior is kept unchanged, but it is ill advised to use both at the same time.  
+ 
 A typical usage would be:
 ````
 uint8_t halfdimmed(uint8_t val) {
