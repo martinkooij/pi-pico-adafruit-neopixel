@@ -233,7 +233,7 @@ void Adafruit_NeoPixel::rp2040Init(uint8_t set_pin)
 		if (resultsm != -1) {
 			if (pio1_offset == -1) {
 				canpio = pio_can_add_program(pio1, &ws2812byte_program);
-				if (canpio) pio1_offset = pio_add_program(pio0, &ws2812byte_program);
+				if (canpio) pio1_offset = pio_add_program(pio1, &ws2812byte_program);
 			};
 			pio = pio1;
 		}
